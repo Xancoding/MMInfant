@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+
+# Jupyter
+*.ipynb_checkpoints/
+
+# Models & weights
+ckpt/
+*.onnx
+*.h5
+*.ckpt
+*.pkl
+
+# Configs (non-default)
+*.local.yaml
+*.local.yml
+
+# Output files
+*.mov
+*.json          # output JSON (keep if input)
+*.png           # output images
+*.jpg           # output images
+
+# Demo / input data
+demo/
+inputs/
+outputs/
+results/
+logs/
+checkpoints/
+Body/
+Face/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+*.tmp
+*.temp
