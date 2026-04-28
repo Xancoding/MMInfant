@@ -81,11 +81,11 @@ def main():
     model_evaluator = evaluator.ModelEvaluator()
 
     tasks = [
-        # 'audio', 
-        # 'motion', 
-        # 'face', 
+        'audio', 
+        'motion', 
+        'face', 
         'early_fusion', 
-        # 'late_fusion',
+        'late_fusion',
         ]
     # Execute evaluations (modify evaluation methods in execute_evaluations as needed)
     multimodal_importance_scores, indicator_indices = execute_evaluations(
