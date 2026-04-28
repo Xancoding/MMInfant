@@ -7,79 +7,34 @@
 ## 整体架构
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                         原始数据采集                                      │
-│                    婴儿视频 (.mp4) + 音频 (.wav)                          │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-            ┌───────────────────────┴───────────────────────┐
-            ▼                                               ▼
-┌───────────────────────┐                     ┌───────────────────────────┐
-│     InfantVision/     │                     │         code/             │
-│   (视觉特征提取子模块)  │                     │    (主分析管道子模块)      │
-│                       │                     │                           │
-│  • 身体部位分割        │                     │  • 音频特征提取            │
-│  • 光流运动估计        │                     │  • 运动/面部高阶统计特征   │
-│  • 面部68点关键点检测   │                     │  • 多模态分类与融合评估    │
-└───────────────────────┘                     └───────────────────────────┘
-            │                                               ▲
-            │    Body/*_motion_features.json                │
-            │    Face/*_face_landmarks.json                 │
-            └───────────────────────────────────────────────┘
-                                    │
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                        评估结果输出                                      │
-│         Accuracy / Precision / Recall / Specificity / F1-Score          │
-│              单模态 · Early Fusion · Late Fusion (Stacking)              │
-└─────────────────────────────────────────────────────────────────────────┘
+Step 1: 原始视频 ──→ InfantVision/body_seg_5.py
+                         └──→ Body/*_motion_features.json
+
+Step 2: 原始视频 ──→ InfantVision/facial_landmark_68.py
+                         └──→ Face/*_face_landmarks.json
+
+Step 3: 原始音频 + JSON 特征 ──→ code/main.py
+                                      ├──→ 音频特征提取
+                                      ├──→ 运动特征提取
+                                      ├──→ 面部特征提取
+                                      └──→ 分类评估
+                                             ├── 单模态 (Audio / Motion / Face)
+                                             ├── Early Fusion (特征拼接)
+                                             └── Late Fusion (Stacking)
 ```
 
 ---
-
-## 模块说明
-
-| 模块 | 路径 | 核心功能 | 详细文档 |
-|---|---|---|---|
-| **视觉特征提取** | [`InfantVision/`](./InfantVision/) | 基于深度学习模型从婴儿视频中提取身体部位分割掩码、光流运动向量及面部68点关键点坐标 | [InfantVision/README.md](./InfantVision/README.md) |
-| **主分析管道** | [`code/`](./code/) | 从原始音频与视觉JSON特征中提取高阶统计特征，基于 SVM / RF / LightGBM 进行单模态与多模态分类评估 | [code/README.md](./code/README.md) |
 
 ---
 
 ## 目录结构
 
 ```
-.
-├── InfantVision/                  # 视觉特征提取子模块
-│   ├── body_seg_5.py              # 身体部位分割与运动分析
-│   ├── facial_landmark_68.py      # 面部68点关键点检测
-│   ├── ckpt/                      # 预训练模型权重
-│   ├── models/                    # YOLOv5-face 模型定义
-│   ├── lib/                       # HRNet 关键点模型库
-│   └── README.md                  # 视觉模块详细文档
-│
-├── code/                          # 主分析管道子模块
-│   ├── main.py                    # 主控入口
-│   ├── config.py                  # 全局配置
-│   ├── data_loader.py             # 数据加载与特征缓存
-│   ├── evaluator.py               # 模型评估器
-│   ├── utils.py                   # 通用工具
-│   ├── features/                  # 三模态特征提取
-│   │   ├── Feature_Extraction_Audio.py
-│   │   ├── Feature_Extraction_Body.py
-│   │   └── Feature_Extraction_Face.py
-│   └── README.md                  # 主分析管道详细文档
-│
-├── dataset/                       # 真实数据集（Features 已开源）
-│   ├── NEWBORN200/
-│   └── NICU50/
-│
-├── sample/                        # 样例数据（真实视频+音频，用于快速验证流程）
-│   ├── data/                      # 原始音视频
-│   ├── Body/                      # InfantVision 身体运动输出
-│   └── Face/                      # InfantVision 面部关键点输出
-│
-└── README.md                      # 本文件（项目总览）
+├── InfantVision/                  # 视觉特征提取（body_seg_5.py / facial_landmark_68.py）
+├── code/                          # 主分析管道（main.py / config.py / features/）
+├── dataset/                       # 数据集（原始数据不开源，Features 已开源）
+├── sample/                        # 样例数据（视频+音频，需运行 InfantVision 生成 JSON）
+└── README.md
 ```
 
 ---
@@ -89,13 +44,12 @@
 ### 1. 环境准备
 
 ```bash
-# 克隆仓库后，安装视觉模块依赖
-cd InfantVision
-pip install torch torchvision opencv-python numpy pillow tqdm matplotlib scipy modelscope
+# conda 创建环境
+conda create -n MMInfant python=3.8 -y
+conda activate MMInfant
 
-# 安装主分析管道依赖
-cd ../code
-pip install numpy scipy matplotlib tqdm scikit-learn lightgbm imbalanced-learn librosa torch
+# 安装依赖
+pip install -r requirements.txt
 ```
 
 ### 2. 准备模型权重（视觉模块）
@@ -125,43 +79,24 @@ python main.py
 
 ## 数据集
 
-本项目支持以下婴儿多模态数据集：
+本项目支持以下婴儿多模态数据集（**原始数据不开源，Features 已开源**）：
 
 - **NICU50**：50 例 NICU 环境婴儿视频-音频记录
 - **NEWBORN200**：200 例新生儿视频-音频记录
 
-数据集目录结构要求：
+原始数据（视频、音频、标签）不开源，文件结构组织如下：
 
 ```
 dataset/
 └── NICU50/
     ├── data/          # .wav 音频文件
     ├── Label/         # 哭声标签 (.txt)
-    ├── Scene/         # 场景标签 (.txt，可选)
-    ├── Body/          # 身体运动 JSON（由 InfantVision 生成）
-    └── Face/          # 面部关键点 JSON（由 InfantVision 生成）
+    ├── Scene/         # 场景标签 (.txt，可选）
+    ├── Body/          # InfantVision 输出的身体运动 JSON
+    └── Face/          # InfantVision 输出的面部关键点 JSON
 ```
 
----
-
-## 典型工作流
-
-```
-Step 1: 原始视频 ──→ InfantVision/body_seg_5.py
-                         └──→ Body/subject_motion_features.json
-
-Step 2: 原始视频 ──→ InfantVision/facial_landmark_68.py
-                         └──→ Face/subject_face_landmarks.json
-
-Step 3: 原始音频 + JSON 特征 ──→ code/main.py
-                                      ├──→ 音频特征提取
-                                      ├──→ 运动特征提取
-                                      ├──→ 面部特征提取
-                                      └──→ 分类评估
-                                             ├── 单模态 (Audio / Motion / Face)
-                                             ├── Early Fusion (特征拼接)
-                                             └── Late Fusion (Stacking)
-```
+> `sample/` 目录下有样例视频和音频，Body/Face JSON 需自行运行 InfantVision 生成后用于快速验证流程。
 
 ---
 
@@ -169,7 +104,6 @@ Step 3: 原始音频 + JSON 特征 ──→ code/main.py
 
 本项目使用了以下开源库与模型：
 
-- **pyAudioAnalysis**：音频特征提取基础库
 - **scikit-learn / LightGBM / imbalanced-learn**：机器学习与数据平衡
 - **librosa**：音频加载与处理
 - **ModelScope / `iic/cv_resnet101_image-multiple-human-parsing`**：人体部位分割

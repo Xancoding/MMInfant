@@ -41,6 +41,7 @@ logs/
 checkpoints/
 Body/
 Face/
+deploy/
 
 # IDE
 .vscode/

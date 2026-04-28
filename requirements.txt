@@ -1,0 +1,17 @@
+# 视觉模块依赖
+torch
+torchvision
+opencv-python
+numpy
+pillow
+tqdm
+matplotlib
+scipy
+modelscope
+seaborn
+
+# 主分析管道依赖
+scikit-learn
+lightgbm
+imbalanced-learn
+librosa
