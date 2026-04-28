@@ -45,11 +45,14 @@ Step 3: 原始音频 + JSON 特征 ──→ code/main.py
 
 ```bash
 # conda 创建环境
-conda create -n MMInfant python=3.8 -y
+conda create -n MMInfant python=3.9 -y
 conda activate MMInfant
 
 # 安装依赖
 pip install -r requirements.txt
+
+# 安装 mmcv
+pip install mmcv==2.2.0 -f https://download.openmmlab.com/mmcv/dist/cu121/torch2.4/index.html
 ```
 
 ### 2. 准备模型权重（视觉模块）
